@@ -1,0 +1,18 @@
+[submodule "external/libheif"]
+	path = external/libheif
+	url = https://github.com/strukturag/libheif.git
+[submodule "external/libde265"]
+	path = external/libde265
+	url = https://github.com/strukturag/libde265.git
+[submodule "external/x265"]
+	path = external/x265
+	url = https://bitbucket.org/multicoreware/x265_git.git
+[submodule "external/libaom"]
+	path = external/libaom
+	url = https://aomedia.googlesource.com/aom
+[submodule "external/dav1d"]
+	path = external/dav1d
+	url = https://code.videolan.org/videolan/dav1d.git
+[submodule "external/libwebp"]
+	path = external/libwebp
+	url = https://github.com/webmproject/libwebp.git
