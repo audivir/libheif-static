@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 #
-# Exercises the static libheif.a built by build.sh: smoke_test decodes real
-# HEIC/AVIF files, codec_test encodes with x265/aom, decodes AV1 via both
-# dav1d and aom, and exercises the libsharpyuv path.
+# Exercises the static libheif.a built by build.sh: pkg-config resolution of
+# libheif and its Requires.private deps, smoke_test decoding real HEIC/AVIF
+# files, and codec_test encoding with x265/aom and decoding AV1 via both
+# dav1d and aom, exercising the libsharpyuv path.
 #
 # Usage: ./tests/run_smoke_tests.sh [--target native|windows-amd64|windows-arm64] [--no-build]
 #
@@ -54,6 +55,13 @@ LINK_FLAGS=()
 CAN_RUN=1
 
 mkdir -p "$BUILD_DIR"
+
+echo "==> Verifying pkg-config resolution"
+if ! PKG_CONFIG_PATH="$DIST_DIR/lib/pkgconfig" PKG_CONFIG_LIBDIR="$DIST_DIR/lib/pkgconfig" \
+    pkg-config --print-errors --cflags --libs --static libheif; then
+  echo "ERROR: pkg-config failed to resolve libheif and its Requires.private deps." >&2
+  exit 1
+fi
 
 if [[ "$TARGET" == windows-* ]]; then
   EXE_SUFFIX=".exe"
