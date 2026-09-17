@@ -11,3 +11,8 @@ Thumbs.db
 env/
 
 # custom exclusions
+/build/
+/build-*/
+/dist/
+/dist-*/
+.llvm-mingw/

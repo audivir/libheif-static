@@ -10,25 +10,70 @@ jobs:
         include:
           - os: macos-14
             asset: macos-arm64
+            target: native
+            dist_dir: dist
           - os: ubuntu-latest
             asset: linux-amd64
+            target: native
+            dist_dir: dist
           - os: ubuntu-24.04-arm
             asset: linux-arm64
+            target: native
+            dist_dir: dist
+          - os: windows-latest
+            asset: windows-amd64
+            target: native
+            dist_dir: dist-windows-amd64
+          - os: ubuntu-latest
+            asset: windows-arm64
+            target: windows-arm64
+            dist_dir: dist-windows-arm64
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
         with:
           submodules: recursive
+      # x265 needs `git describe --tags` for its Windows .rc version; shallow clones have no tags.
+      - name: Fetch full history for x265
+        if: contains(matrix.asset, 'windows')
+        shell: bash
+        run: |
+          if [ "$(git -C vendor/x265 rev-parse --is-shallow-repository)" = "true" ]; then
+            git -C vendor/x265 fetch --unshallow --tags
+          fi
+      - name: Get llvm-mingw release tag
+        if: contains(matrix.asset, 'windows')
+        id: llvm-mingw-version
+        shell: bash
+        run: |
+          RESPONSE="$(curl -sL https://api.github.com/repos/mstorsjo/llvm-mingw/releases/latest)"
+          TAG="$(echo "$RESPONSE" | grep -m1 '"tag_name"' | sed -E 's/.*"tag_name": *"([^"]+)".*/\1/')"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+      - name: Cache llvm-mingw toolchain
+        if: contains(matrix.asset, 'windows')
+        uses: actions/cache@v4
+        with:
+          path: .llvm-mingw
+          key: llvm-mingw-${{ runner.os }}-${{ runner.arch }}-${{ steps.llvm-mingw-version.outputs.tag }}
       - name: Install build tools (Linux)
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y ninja-build meson nasm
       - name: Install build tools (macOS)
         if: runner.os == 'macOS'
         run: brew install ninja meson nasm
-      - run: ./build.sh
-      - run: ./tests/run_smoke_tests.sh
+      - name: Install build tools (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          choco install ninja nasm pkgconfiglite -y
+          pip install meson
+      - shell: bash
+        run: ./build.sh --target ${{ matrix.target }}
+      - shell: bash
+        run: ./tests/run_smoke_tests.sh --target ${{ matrix.target }}
       - name: Package static libraries
-        run: tar -czf libheif-static-${{ matrix.asset }}.tar.gz -C dist .
+        shell: bash
+        run: tar -czf libheif-static-${{ matrix.asset }}.tar.gz -C ${{ matrix.dist_dir }} .
       - uses: actions/upload-artifact@v4
         with:
           name: libheif-static-${{ matrix.asset }}

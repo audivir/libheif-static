@@ -36,11 +36,24 @@ under `dist/`:
 
 Pass `--clean` to remove previous build output first, and `--jobs N` to control parallelism.
 
+Pass `--target windows-amd64` or `--target windows-arm64` to build for Windows instead, using
+the [llvm-mingw](https://github.com/mstorsjo/llvm-mingw) toolchain (downloaded automatically
+into `.llvm-mingw/`), so no vcpkg or Visual Studio installation is required. This works both to
+cross-compile from macOS/Linux, and natively when run from Git Bash on Windows itself, where
+`--target native` auto-detects the host architecture and uses the same toolchain (a bare
+Windows host has no C/C++ compiler of its own). Output for these targets is installed under
+`dist-windows-amd64/`/`dist-windows-arm64/` instead of `dist/`.
+
 To run the smoke tests (decodes sample HEIC/AVIF files through the built static `libheif.a`):
 
 ```shell
 ./tests/run_smoke_tests.sh
 ```
+
+Add `--target windows-amd64`/`--target windows-arm64` to match the `build.sh` target; the same
+binary cannot execute on a foreign architecture, so cross-compiled Windows targets are built but
+not run unless the script is on a matching native Windows host (CI runs this natively on
+`windows-latest` for windows-amd64).
 
 ## Acknowledgments
 
