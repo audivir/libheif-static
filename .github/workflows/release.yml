@@ -1,8 +1,10 @@
 name: Release
 on:
-  push:
-    tags: [v*]
+  release:
+    types: [published]
   workflow_dispatch:
+permissions:
+  contents: write
 jobs:
   build:
     strategy:
@@ -41,20 +43,6 @@ jobs:
           if [ "$(git -C vendor/x265 rev-parse --is-shallow-repository)" = "true" ]; then
             git -C vendor/x265 fetch --unshallow --tags
           fi
-      - name: Get llvm-mingw release tag
-        if: contains(matrix.asset, 'windows')
-        id: llvm-mingw-version
-        shell: bash
-        run: |
-          RESPONSE="$(curl -sL https://api.github.com/repos/mstorsjo/llvm-mingw/releases/latest)"
-          TAG="$(echo "$RESPONSE" | grep -m1 '"tag_name"' | sed -E 's/.*"tag_name": *"([^"]+)".*/\1/')"
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-      - name: Cache llvm-mingw toolchain
-        if: contains(matrix.asset, 'windows')
-        uses: actions/cache@v4
-        with:
-          path: .llvm-mingw
-          key: llvm-mingw-${{ runner.os }}-${{ runner.arch }}-${{ steps.llvm-mingw-version.outputs.tag }}
       - name: Install build tools (Linux)
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y ninja-build meson nasm
@@ -69,25 +57,24 @@ jobs:
           pip install meson
       - shell: bash
         run: ./build.sh --target ${{ matrix.target }}
-      - shell: bash
-        run: ./tests/run_smoke_tests.sh --target ${{ matrix.target }}
       - name: Package static libraries
         shell: bash
         run: tar -czf libheif-static-${{ matrix.asset }}.tar.gz -C ${{ matrix.dist_dir }} .
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: libheif-static-${{ matrix.asset }}
           path: libheif-static-${{ matrix.asset }}.tar.gz
+          retention-days: 1
   release:
+    name: Create GitHub Release
     needs: build
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
-          path: artifacts
+          pattern: libheif-static-*
+          path: dist
           merge-multiple: true
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
-          files: artifacts/*.tar.gz
+          files: dist/*

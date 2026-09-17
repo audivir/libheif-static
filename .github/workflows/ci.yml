@@ -36,18 +36,6 @@ jobs:
           if [ "$(git -C vendor/x265 rev-parse --is-shallow-repository)" = "true" ]; then
             git -C vendor/x265 fetch --unshallow --tags
           fi
-      - name: Get llvm-mingw release tag
-        id: llvm-mingw-version
-        shell: bash
-        run: |
-          RESPONSE="$(curl -sL https://api.github.com/repos/mstorsjo/llvm-mingw/releases/latest)"
-          TAG="$(echo "$RESPONSE" | grep -m1 '"tag_name"' | sed -E 's/.*"tag_name": *"([^"]+)".*/\1/')"
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-      - name: Cache llvm-mingw toolchain
-        uses: actions/cache@v4
-        with:
-          path: .llvm-mingw
-          key: llvm-mingw-${{ runner.os }}-${{ runner.arch }}-${{ steps.llvm-mingw-version.outputs.tag }}
       - name: Install build tools
         shell: pwsh
         run: |
