@@ -42,6 +42,19 @@ To run the smoke tests (decodes sample HEIC/AVIF files through the built static 
 ./tests/run_smoke_tests.sh
 ```
 
+## Acknowledgments
+
+This repository builds and vendors the following upstream projects, unmodified, as git
+submodules under `vendor/`. Credit goes to their respective authors:
+
+- [libheif](https://github.com/strukturag/libheif) by Dirk Farin and contributors
+- [libde265](https://github.com/strukturag/libde265) by Dirk Farin, struktur AG, and contributors
+- [x265](https://bitbucket.org/multicoreware/x265_git) by MulticoreWare, Inc. and contributors
+- [libaom](https://aomedia.googlesource.com/aom) by the Alliance for Open Media
+- [dav1d](https://code.videolan.org/videolan/dav1d) by VideoLAN and dav1d authors
+- [libwebp](https://github.com/webmproject/libwebp) by Google Inc.
+
 ## License
 
-MIT
+MIT for this repository's own code. See NOTICE for the licenses of the vendored libraries and
+the resulting static-library artifacts, some of which are copyleft (GPL/LGPL).

@@ -1,3 +1,7 @@
+This license applies only to this repository's own code (build.sh, tests/, README.md, and
+related files). It does not apply to the vendored libraries under vendor/ or to the static
+library artifacts built from them, which carry their own licenses (some copyleft). See NOTICE.
+
 MIT License
 
 Copyright (c) 2026 audivir
