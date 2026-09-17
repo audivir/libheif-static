@@ -8,7 +8,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-EXT_DIR="$ROOT_DIR/external"
+EXT_DIR="$ROOT_DIR/vendor"
 BUILD_DIR="$ROOT_DIR/build"
 PREFIX="$ROOT_DIR/dist"
 JOBS="$(sysctl -n hw.ncpu 2>/dev/null || echo 4)"

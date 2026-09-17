@@ -1,0 +1,9 @@
+# Changes here will be overwritten by Copier
+_commit: e730ed7
+_src_path: gh:audivir/copier-template
+description: Static build of libheif and its codec dependencies
+github_org: audivir
+project_name: libheif-static
+project_slug: libheif_static
+project_type: shell
+publishable: false
