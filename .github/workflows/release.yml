@@ -1,0 +1,48 @@
+name: Release
+on:
+  push:
+    tags: [v*]
+  workflow_dispatch:
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: macos-14
+            asset: macos-arm64
+          - os: ubuntu-latest
+            asset: linux-amd64
+          - os: ubuntu-24.04-arm
+            asset: linux-arm64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+      - name: Install build tools (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y ninja-build meson nasm
+      - name: Install build tools (macOS)
+        if: runner.os == 'macOS'
+        run: brew install ninja meson nasm
+      - run: ./build.sh
+      - run: ./tests/run_smoke_tests.sh
+      - name: Package static libraries
+        run: tar -czf libheif-static-${{ matrix.asset }}.tar.gz -C dist .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: libheif-static-${{ matrix.asset }}
+          path: libheif-static-${{ matrix.asset }}.tar.gz
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*.tar.gz
