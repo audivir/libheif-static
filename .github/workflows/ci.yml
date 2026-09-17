@@ -29,13 +29,6 @@ jobs:
       - uses: actions/checkout@v7
         with:
           submodules: recursive
-      # x265 needs `git describe --tags` for its Windows .rc version; shallow clones have no tags.
-      - name: Fetch full history for x265
-        shell: bash
-        run: |
-          if [ "$(git -C vendor/x265 rev-parse --is-shallow-repository)" = "true" ]; then
-            git -C vendor/x265 fetch --unshallow --tags
-          fi
       - name: Install build tools
         shell: pwsh
         run: |

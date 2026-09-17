@@ -201,9 +201,7 @@ fi
 
 export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
 
-########################################
 # 1. libde265 (static)
-########################################
 echo "==> Building libde265"
 LIBDE265_BUILD="$BUILD_DIR/libde265"
 cmake -S "$EXT_DIR/libde265" -B "$LIBDE265_BUILD" -G Ninja \
@@ -213,9 +211,13 @@ cmake -S "$EXT_DIR/libde265" -B "$LIBDE265_BUILD" -G Ninja \
 cmake --build "$LIBDE265_BUILD" -j "$JOBS"
 cmake --install "$LIBDE265_BUILD"
 
-########################################
 # 2. x265 (static)
-########################################
+# x265 only installs x265.pc when `git describe --tags` succeeds; shallow clones have no tags.
+if [[ "$(git -C "$EXT_DIR/x265" rev-parse --is-shallow-repository)" == "true" ]]; then
+  echo "==> Fetching full history for x265 (needed for its pkg-config generation)"
+  git -C "$EXT_DIR/x265" fetch --unshallow --tags
+fi
+
 echo "==> Building x265"
 X265_BUILD="$BUILD_DIR/x265"
 cmake -S "$EXT_DIR/x265/source" -B "$X265_BUILD" -G Ninja \
@@ -226,9 +228,7 @@ cmake -S "$EXT_DIR/x265/source" -B "$X265_BUILD" -G Ninja \
 cmake --build "$X265_BUILD" -j "$JOBS"
 cmake --install "$X265_BUILD"
 
-########################################
 # 3. libaom (static)
-########################################
 echo "==> Building libaom"
 LIBAOM_BUILD="$BUILD_DIR/libaom"
 cmake -S "$EXT_DIR/libaom" -B "$LIBAOM_BUILD" -G Ninja \
@@ -242,9 +242,7 @@ cmake -S "$EXT_DIR/libaom" -B "$LIBAOM_BUILD" -G Ninja \
 cmake --build "$LIBAOM_BUILD" -j "$JOBS"
 cmake --install "$LIBAOM_BUILD"
 
-########################################
 # 4. dav1d (static, via meson/ninja)
-########################################
 echo "==> Building dav1d"
 DAV1D_BUILD="$BUILD_DIR/dav1d"
 meson setup "$DAV1D_BUILD" "$EXT_DIR/dav1d" \
@@ -267,9 +265,7 @@ meson setup "$DAV1D_BUILD" "$EXT_DIR/dav1d" \
 ninja -C "$DAV1D_BUILD" -j "$JOBS"
 ninja -C "$DAV1D_BUILD" install
 
-########################################
 # 5. libwebp (static, only for libsharpyuv)
-########################################
 echo "==> Building libwebp (libsharpyuv)"
 LIBWEBP_BUILD="$BUILD_DIR/libwebp"
 cmake -S "$EXT_DIR/libwebp" -B "$LIBWEBP_BUILD" -G Ninja \
@@ -287,9 +283,7 @@ cmake -S "$EXT_DIR/libwebp" -B "$LIBWEBP_BUILD" -G Ninja \
 cmake --build "$LIBWEBP_BUILD" -j "$JOBS"
 cmake --install "$LIBWEBP_BUILD"
 
-########################################
 # 6. libheif (static, with all codec plugins baked in)
-########################################
 echo "==> Building libheif"
 LIBHEIF_BUILD="$BUILD_DIR/libheif"
 cmake -S "$EXT_DIR/libheif" -B "$LIBHEIF_BUILD" -G Ninja \
@@ -309,9 +303,7 @@ cmake -S "$EXT_DIR/libheif" -B "$LIBHEIF_BUILD" -G Ninja \
 cmake --build "$LIBHEIF_BUILD" -j "$JOBS"
 cmake --install "$LIBHEIF_BUILD"
 
-########################################
 # 7. Make pkg-config files relocatable
-########################################
 # CMake/meson bake in the absolute build-time prefix; make it relative instead.
 echo "==> Making pkg-config files relocatable"
 for PC_FILE in "$PREFIX"/lib/pkgconfig/*.pc; do
@@ -320,6 +312,20 @@ for PC_FILE in "$PREFIX"/lib/pkgconfig/*.pc; do
   sed -i.bak 's|^prefix=.*|prefix=${pcfiledir}/../..|' "$PC_FILE"
   rm -f "$PC_FILE.bak"
 done
+
+# 8. Verify all expected pkg-config files are present
+# catches x265.pc-style install gaps in any dependency.
+echo "==> Verifying pkg-config files"
+MISSING_PC=0
+for PC_NAME in libheif libde265 x265 aom dav1d libsharpyuv; do
+  if [[ ! -e "$PREFIX/lib/pkgconfig/$PC_NAME.pc" ]]; then
+    echo "ERROR: missing $PREFIX/lib/pkgconfig/$PC_NAME.pc" >&2
+    MISSING_PC=1
+  fi
+done
+if [[ "$MISSING_PC" -eq 1 ]]; then
+  exit 1
+fi
 
 echo ""
 echo "==> Done. Static libraries and headers installed under: $PREFIX"
