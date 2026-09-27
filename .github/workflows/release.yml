@@ -22,6 +22,16 @@ jobs:
             asset: linux-arm64
             target: native
             dist_dir: dist
+          - os: ubuntu-latest
+            asset: linux-musl-amd64
+            target: native
+            dist_dir: dist
+            musl: true
+          - os: ubuntu-24.04-arm
+            asset: linux-musl-arm64
+            target: native
+            dist_dir: dist
+            musl: true
           - os: windows-latest
             asset: windows-amd64
             target: native
@@ -36,7 +46,7 @@ jobs:
         with:
           submodules: recursive
       - name: Install build tools (Linux)
-        if: runner.os == 'Linux'
+        if: runner.os == 'Linux' && !matrix.musl
         run: sudo apt-get update && sudo apt-get install -y ninja-build meson nasm
       - name: Install build tools (macOS)
         if: runner.os == 'macOS'
@@ -47,8 +57,16 @@ jobs:
         run: |
           choco install ninja nasm pkgconfiglite -y
           pip install meson
-      - shell: bash
+      - if: ${{ !matrix.musl }}
+        shell: bash
         run: ./build.sh --target ${{ matrix.target }}
+      - name: Build in Alpine (musl)
+        if: ${{ matrix.musl }}
+        run: |
+          docker run --rm -v "$PWD":/work -w /work alpine:3.22 sh -c '
+            apk add --no-cache bash build-base cmake meson ninja nasm pkgconf git perl python3 linux-headers &&
+            git config --global --add safe.directory "*" &&
+            ./build.sh --target ${{ matrix.target }}'
       - name: Package static libraries
         shell: bash
         run: tar -czf libheif-static-${{ matrix.asset }}.tar.gz -C ${{ matrix.dist_dir }} .

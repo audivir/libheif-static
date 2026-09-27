@@ -9,6 +9,7 @@ codec dependencies it needs (libde265, x265, libaom, dav1d, libwebp) vendored as
 - `git`
 - [Homebrew](https://brew.sh) on macOS (used to install missing build tools automatically)
 - On Linux: `cmake`, `ninja-build`, `meson`, `nasm`, `pkg-config` installed via your package manager
+  (glibc and musl, e.g. Alpine, are both supported; on Alpine install `bash build-base cmake meson ninja nasm pkgconf git perl python3 linux-headers`)
 
 ## Installation
 
@@ -43,6 +44,9 @@ cross-compile from macOS/Linux, and natively when run from Git Bash on Windows i
 `--target native` auto-detects the host architecture and uses the same toolchain (a bare
 Windows host has no C/C++ compiler of its own). Output for these targets is installed under
 `dist-windows-amd64/`/`dist-windows-arm64/` instead of `dist/`.
+
+Releases ship prebuilt archives for macOS arm64, Linux glibc (`linux-amd64`/`linux-arm64`),
+Linux musl (`linux-musl-amd64`/`linux-musl-arm64`, built on Alpine), and Windows.
 
 To run the smoke tests (decodes sample HEIC/AVIF files through the built static `libheif.a`):
 

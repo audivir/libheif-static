@@ -23,6 +23,21 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y ninja-build meson nasm
       - run: ./build.sh
       - run: ./tests/run_smoke_tests.sh
+  musl:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+      - name: Build and test in Alpine (musl)
+        run: |
+          docker run --rm -v "$PWD":/work -w /work alpine:3.22 sh -c '
+            apk add --no-cache bash build-base cmake meson ninja nasm pkgconf git perl python3 linux-headers &&
+            git config --global --add safe.directory "*" &&
+            ./build.sh && ./tests/run_smoke_tests.sh'
   windows:
     runs-on: windows-latest
     steps:
