@@ -304,6 +304,24 @@ cmake -S "$EXT_DIR/libheif" -B "$LIBHEIF_BUILD" -G Ninja \
 cmake --build "$LIBHEIF_BUILD" -j "$JOBS"
 cmake --install "$LIBHEIF_BUILD"
 
+if [[ "$TARGET" == "native" && "$(uname -s)" == "Linux" && "$(ldd --version 2>&1 || true)" == *musl* ]]; then
+  echo "==> Bundling static C++ runtime (musl)"
+  for ARCHIVE in libstdc++.a libgcc_eh.a; do
+    ARCHIVE_PATH="$(c++ -print-file-name="$ARCHIVE")"
+    if [[ "$ARCHIVE_PATH" != /* ]]; then
+      echo "ERROR: c++ could not locate $ARCHIVE" >&2
+      exit 1
+    fi
+    cp "$ARCHIVE_PATH" "$PREFIX/lib/$ARCHIVE"
+  done
+  sed -i.bak -e 's/-lgcc_s /-lgcc_eh /g' -e 's/-lgcc_s$/-lgcc_eh/' "$PREFIX/lib/pkgconfig/x265.pc"
+  rm -f "$PREFIX/lib/pkgconfig/x265.pc.bak"
+  if ! grep -q -- '-lgcc_eh' "$PREFIX/lib/pkgconfig/libheif.pc"; then
+    sed -i.bak '/^Libs.private:/ s/$/ -lgcc_eh/' "$PREFIX/lib/pkgconfig/libheif.pc"
+    rm -f "$PREFIX/lib/pkgconfig/libheif.pc.bak"
+  fi
+fi
+
 # 7. Make pkg-config files relocatable
 # CMake/meson bake in the absolute build-time prefix; make it relative instead.
 echo "==> Making pkg-config files relocatable"

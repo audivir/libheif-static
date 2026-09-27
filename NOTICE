@@ -38,6 +38,13 @@ libwebp (used here for the libsharpyuv component)
   Copyright (c) 2010, Google Inc.
   License: BSD-3-Clause
 
+GCC runtime libraries (linux-musl-* artifacts only: lib/libstdc++.a, lib/libgcc_eh.a)
+  https://gcc.gnu.org
+  Copyright (c) Free Software Foundation, Inc.
+  License: GNU General Public License v3.0 or later with the GCC Runtime Library Exception 3.1
+  (GPL-3.0-or-later WITH GCC-exception-3.1), copied unmodified from the Alpine Linux toolchain
+  that compiled the other libraries so that consumers depend on nothing but the musl libc.
+
 Because x265 is GPL-2.0-or-later, and GPL has no static-linking exception, distributing a
 static library that embeds x265 makes the resulting archive a combined GPL work: anyone who
 redistributes it (including the release tarballs from this repo) must also satisfy the GPL,

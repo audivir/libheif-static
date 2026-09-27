@@ -46,7 +46,9 @@ Windows host has no C/C++ compiler of its own). Output for these targets is inst
 `dist-windows-amd64/`/`dist-windows-arm64/` instead of `dist/`.
 
 Releases ship prebuilt archives for macOS arm64, Linux glibc (`linux-amd64`/`linux-arm64`),
-Linux musl (`linux-musl-amd64`/`linux-musl-arm64`, built on Alpine), and Windows.
+Linux musl (`linux-musl-amd64`/`linux-musl-arm64`, built on Alpine), and Windows. The musl archives also bundle the static C++ runtime (`libstdc++.a`, `libgcc_eh.a`)
+and reference it from their pkg-config files, so binaries linked against them depend only on the
+musl libc.
 
 To run the smoke tests (decodes sample HEIC/AVIF files through the built static `libheif.a`):
 

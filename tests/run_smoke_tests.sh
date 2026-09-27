@@ -46,6 +46,11 @@ case "$TARGET" in
   *) echo "Unknown --target: $TARGET (expected native, windows-amd64, or windows-arm64)" >&2; exit 1 ;;
 esac
 
+IS_MUSL=0
+if [[ "$TARGET" == "native" && "$(uname -s)" == "Linux" && "$(ldd --version 2>&1 || true)" == *musl* ]]; then
+  IS_MUSL=1
+fi
+
 DIST_DIR="$ROOT_DIR/dist$TARGET_SUFFIX"
 BUILD_DIR="$ROOT_DIR/build$TARGET_SUFFIX/tests"
 EXE_SUFFIX=""
@@ -94,6 +99,11 @@ if [[ "$NO_BUILD" -eq 0 ]]; then
   fi
 
   LIBHEIF_LIBS=(-lheif -lde265 -lx265 -laom -ldav1d -lsharpyuv)
+  if [[ "$IS_MUSL" -eq 1 ]]; then
+    read -r -a LIBHEIF_LIBS <<< "$(PKG_CONFIG_PATH="$DIST_DIR/lib/pkgconfig" PKG_CONFIG_LIBDIR="$DIST_DIR/lib/pkgconfig" \
+      pkg-config --libs --static libheif)"
+    LINK_FLAGS=(-static-libgcc)
+  fi
 
   "$CXX" -x c "${DEFINES[@]+"${DEFINES[@]}"}" "$ROOT_DIR/tests/smoke_test.c" \
     -I "$DIST_DIR/include" -L "$DIST_DIR/lib" \
@@ -114,6 +124,17 @@ if [[ "$CAN_RUN" -eq 0 ]]; then
 fi
 
 FAIL=0
+
+if [[ "$IS_MUSL" -eq 1 ]]; then
+  for BIN in smoke_test codec_test; do
+    EXTRA_DEPS="$(ldd "$BUILD_DIR/$BIN" | grep -v -e ld-musl -e libc.musl || true)"
+    if [[ -n "$EXTRA_DEPS" ]]; then
+      echo "ERROR: $BIN depends on shared libraries other than musl libc:" >&2
+      echo "$EXTRA_DEPS" >&2
+      FAIL=1
+    fi
+  done
+fi
 
 run_case() {
   local file="$1"
